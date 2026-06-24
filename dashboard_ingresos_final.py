@@ -27,6 +27,34 @@ st.markdown("""
 st.title("💰 Dashboard de Ingresos Operacionales")
 st.markdown("**Grupo CISA - Análisis Detallado 2026 vs 2025**")
 
+# ==================== SIDEBAR: FILTROS ====================
+st.sidebar.header("⚙️ Filtros")
+
+mes_seleccionado = st.sidebar.selectbox(
+    "📅 Selecciona Mes:",
+    ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    index=4
+)
+
+empresa_seleccionada = st.sidebar.selectbox(
+    "🏢 Selecciona Empresa:",
+    ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA", "COREVSA"]
+)
+
+segmento_seleccionado = st.sidebar.selectbox(
+    "🚌 Selecciona Segmento:",
+    ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús"]
+)
+
+st.sidebar.markdown("---")
+st.sidebar.info(f"""
+**Filtros Activos:**
+- 📅 Mes: {mes_seleccionado}
+- 🏢 Empresa: {empresa_seleccionada}
+- 🚌 Segmento: {segmento_seleccionado}
+""")
+
 # ==================== SECCIÓN 1: MÉTRICAS PRINCIPALES ====================
 st.header("📊 1. Resumen Total de Ingresos")
 
@@ -70,6 +98,18 @@ with col4:
 
 st.divider()
 
+# ==================== SECCIÓN 1b: GRÁFICA COMPARATIVA TOTAL ====================
+st.subheader("📊 Comparativa Total: Ingresos 2026 vs 2025")
+
+fig_total = go.Figure(data=[
+    go.Bar(x=["Ingresos"], y=[456.5], name="2026", marker_color="#667eea", text=["$456.5M"], textposition="outside"),
+    go.Bar(x=["Ingresos"], y=[423.3], name="2025", marker_color="#4facfe", text=["$423.3M"], textposition="outside")
+])
+fig_total.update_layout(barmode="group", height=350, title="Total de Ingresos Operacionales")
+st.plotly_chart(fig_total, use_container_width=True)
+
+st.divider()
+
 # ==================== SECCIÓN 2: APORTACIÓN POR SEGMENTO ====================
 st.header("📈 2. Aportación por Segmento de Empresa")
 
@@ -80,22 +120,7 @@ segmentos = {
     "Trolebús": {"2026": 16.140, "2025": 3.755, "var": 12.385, "pct": 3.5},
 }
 
-# Tabla de segmentos
-tabla_segmentos = []
-for seg, datos in segmentos.items():
-    tabla_segmentos.append({
-        "Segmento": seg,
-        "2026": f"${datos['2026']:.1f}M",
-        "2025": f"${datos['2025']:.1f}M",
-        "Variación": f"+${datos['var']:.1f}M",
-        "% Variación": f"+{((datos['var']/datos['2025'])*100):.1f}%",
-        "% del Total": f"{datos['pct']:.1f}%"
-    })
-
-df_seg = pd.DataFrame(tabla_segmentos)
-st.dataframe(df_seg, use_container_width=True, hide_index=True)
-
-# Gráfico de barras por segmento
+# Gráfico de barras por segmento PRIMERO (visual)
 seg_names = list(segmentos.keys())
 seg_2026 = [segmentos[s]["2026"] for s in seg_names]
 seg_2025 = [segmentos[s]["2025"] for s in seg_names]
@@ -149,20 +174,6 @@ drivers = {
         "impacto": "Demanda total de servicios de transporte"
     }
 }
-
-# Tabla de drivers
-tabla_drivers = []
-for driver, datos in drivers.items():
-    tabla_drivers.append({
-        "Driver": driver,
-        "2026": datos["valor_26"],
-        "2025": datos["valor_25"],
-        "Variación": datos["variacion"],
-        "% Aportación": datos["aportacion"]
-    })
-
-df_drivers = pd.DataFrame(tabla_drivers)
-st.dataframe(df_drivers, use_container_width=True, hide_index=True)
 
 # Cards detallados de cada driver
 st.subheader("Análisis Detallado por Driver")
@@ -223,31 +234,31 @@ st.header("📊 4. Evolución de Ingresos: Waterfall 2025 → 2026")
 
 st.markdown("**¿Cómo pasamos de $423.3M a $456.5M? Aquí está el desglose:**")
 
-# Waterfall por segmento
+# Waterfall por segmento - CORREGIDO
 fig_waterfall = go.Figure(go.Waterfall(
     name="Ingresos",
     orientation="v",
     x=[
         "Ingresos 2025",
-        "Convencionales (+8.0%)",
-        "Metrobús (+4.7%)",
-        "Trolebús (+329.9%)",
-        "Foráneas (+3.6%)",
+        "Convencionales",
+        "Metrobús",
+        "Trolebús",
+        "Foráneas",
         "Ingresos 2026"
     ],
-    textposition="outside",
     y=[423.277, 7.327, 7.316, 12.385, 6.161, 0],
-    base=0,
+    textposition="outside",
+    text=["$423.3M", "+$7.3M\n(+8.0%)", "+$7.3M\n(+4.7%)", "+$12.4M\n(+329.9%)", "+$6.2M\n(+3.6%)", "$456.5M"],
     connector={"line": {"color": "rgba(63, 63, 63, 0.35)"}},
     increasing={"marker": {"color": "#10b981"}},
     decreasing={"marker": {"color": "#ef4444"}},
     totals={"marker": {"color": "#667eea"}},
-    measures=["relative", "relative", "relative", "relative", "relative", "total"],
+    measure=["relative", "relative", "relative", "relative", "relative", "total"]
 ))
 
 fig_waterfall.update_layout(
     height=500,
-    title="WF Valor Ingresos - Evolución por Segmento",
+    title="WF Valor Ingresos - Evolución por Segmento (2025 → 2026)",
     yaxis_title="Ingresos (Millones)"
 )
 
@@ -296,7 +307,43 @@ with col2:
 
 st.divider()
 
-# ==================== SECCIÓN 5: SUMMARY ====================
+# ==================== SECCIÓN 5: TABLAS DETALLADAS ====================
+st.header("📋 5. Tablas Detalladas")
+
+st.subheader("Tabla: Ingresos por Segmento")
+
+tabla_segmentos = []
+for seg, datos in segmentos.items():
+    tabla_segmentos.append({
+        "Segmento": seg,
+        "2026": f"${datos['2026']:.1f}M",
+        "2025": f"${datos['2025']:.1f}M",
+        "Variación": f"+${datos['var']:.1f}M",
+        "% Variación": f"+{((datos['var']/datos['2025'])*100):.1f}%",
+        "% del Total": f"{datos['pct']:.1f}%"
+    })
+
+df_seg = pd.DataFrame(tabla_segmentos)
+st.dataframe(df_seg, use_container_width=True, hide_index=True)
+
+st.divider()
+
+st.subheader("Tabla: Drivers de Ingresos")
+
+tabla_drivers = []
+for driver, datos in drivers.items():
+    tabla_drivers.append({
+        "Driver": driver,
+        "2026": datos["valor_26"],
+        "2025": datos["valor_25"],
+        "Variación": datos["variacion"],
+        "% Aportación": datos["aportacion"]
+    })
+
+df_drivers = pd.DataFrame(tabla_drivers)
+st.dataframe(df_drivers, use_container_width=True, hide_index=True)
+
+# ==================== SECCIÓN 6: SUMMARY ====================
 st.header("📋 Resumen Ejecutivo")
 
 summary_data = {
