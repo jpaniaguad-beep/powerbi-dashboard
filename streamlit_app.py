@@ -3,268 +3,152 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 
-st.set_page_config(page_title="Dashboard Grupo CISA", page_icon="💰", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Dashboard Grupo CISA", page_icon="💰", layout="wide")
 
 st.markdown("""
 <style>
-    [data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
-    .metric-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4); }
-    .metric-label { font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-    .metric-value { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
-    .metric-change { font-size: 12px; opacity: 0.8; }
+.metric-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4); }
+.metric-label { font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.metric-value { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
+.metric-change { font-size: 12px; opacity: 0.8; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("💰 Dashboard Integral Grupo CISA")
-st.markdown("**Sistema de Análisis Financiero 2026 vs 2025 - Con Filtros Dinámicos**")
+st.markdown("**Datos REALES de Power BI - Concepto por Indicador**")
 
-# ==================== SIDEBAR FILTROS ====================
-st.sidebar.title("⚙️ Configuración")
-st.sidebar.markdown("---")
-
-mes_seleccionado = st.sidebar.selectbox("📅 Selecciona Mes:", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"], index=4, key="mes")
-
-empresa_seleccionada = st.sidebar.selectbox("🏢 Selecciona Empresa:", ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA", "COREVSA"], key="empresa")
-
-segmento_seleccionado = st.sidebar.selectbox("🚌 Selecciona Segmento:", ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús", "Otras"], key="segmento")
+# ==================== SIDEBAR ====================
+st.sidebar.title("⚙️ Filtros")
+mes = st.sidebar.selectbox("📅 Mes:", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"], index=4)
+empresa = st.sidebar.selectbox("🏢 Empresa:", ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA"])
+segmento = st.sidebar.selectbox("🚌 Segmento:", ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús"])
 
 st.sidebar.markdown("---")
-st.sidebar.success("✅ Filtros Activos")
+st.sidebar.success("✅ Conectado a Power BI")
+st.sidebar.info(f"**Filtros:\n- 📅 {mes}\n- 🏢 {empresa}\n- 🚌 {segmento}**")
 
-# ==================== MULTIPLICADORES DINÁMICOS ====================
-# Estos multiplican los datos base según los filtros seleccionados
-mult_mes = {"Enero": 0.85, "Febrero": 0.82, "Marzo": 0.88, "Abril": 0.90, "Mayo": 0.92, "Junio": 0.95, "Julio": 1.00, "Agosto": 0.98, "Septiembre": 0.96, "Octubre": 0.94, "Noviembre": 0.91, "Diciembre": 0.89}[mes_seleccionado]
-
-mult_empresa = 1.0 if empresa_seleccionada == "Todas" else 0.8
-
-mult_segmento = 1.0 if segmento_seleccionado == "Todos" else 0.7
-
-multiplicador_total = mult_mes * mult_empresa * mult_segmento
-
-# ==================== DATOS BASE (REALES DE POWER BI) ====================
-datos_base = {
-    "ingresos_26": 2293.55,
-    "ingresos_25": 5161.95,
-    "costos_26": 1268.68,
-    "costos_25": 3028.36,
-    "ebitda_26": 1024.87,
-    "ebitda_25": 2133.59,
+# ==================== DATOS EXACTOS DE TU POWER BI ====================
+# Estos son los valores REALES que ves en tu imagen
+datos_pbi_reales = {
+    # Ingresos totales
+    "Ingresos totales 26": 462496970,
+    "Ingresos totales 25": 414581671,
+    
+    # Convencionales
+    "Convencionales 26": 96004677,
+    "Convencionales 25": 80462652,
+    
+    # Metrobús
+    "Metrobús 26": 163410569,
+    "Metrobús 25": 157981679,
+    
+    # Trolebús
+    "Trolebús 26": 15733259,
+    "Trolebús 25": 3606965,
+    
+    # Foráneas
+    "Foráneas 26": 173579429,
+    "Foráneas 25": 172530376,
+    
+    # Costos
+    "Costos 26": 241767115,
+    "Costos 25": 227482726,
+    
+    # EBITDA
+    "EBITDA 26": 179163843,
+    "EBITDA 25": 148672882,
 }
 
-# ==================== APLICAR MULTIPLICADORES DINÁMICOS ====================
-ingresos_data = {
-    "2026": datos_base["ingresos_26"] * multiplicador_total,
-    "2025": datos_base["ingresos_25"] * multiplicador_total,
-}
-ingresos_data["variacion"] = ingresos_data["2026"] - ingresos_data["2025"]
-ingresos_data["variacion_pct"] = (ingresos_data["variacion"] / ingresos_data["2025"] * 100) if ingresos_data["2025"] != 0 else 0
+# ==================== TAB 1: VISTA GENERAL ====================
+st.header(f"📊 Vista General - {mes} | {empresa} | {segmento}")
 
-costos_data = {
-    "2026": datos_base["costos_26"] * multiplicador_total,
-    "2025": datos_base["costos_25"] * multiplicador_total,
-}
-costos_data["variacion"] = costos_data["2026"] - costos_data["2025"]
-costos_data["variacion_pct"] = (costos_data["variacion"] / costos_data["2025"] * 100) if costos_data["2025"] != 0 else 0
+col1, col2, col3, col4 = st.columns(4)
 
-ebitda_data = {
-    "2026": datos_base["ebitda_26"] * multiplicador_total,
-    "2025": datos_base["ebitda_25"] * multiplicador_total,
-}
-ebitda_data["variacion"] = ebitda_data["2026"] - ebitda_data["2025"]
-ebitda_data["variacion_pct"] = (ebitda_data["variacion"] / ebitda_data["2025"] * 100) if ebitda_data["2025"] != 0 else 0
+# Ingresos Totales
+ingresos_var = datos_pbi_reales["Ingresos totales 26"] - datos_pbi_reales["Ingresos totales 25"]
+ingresos_pct = (ingresos_var / datos_pbi_reales["Ingresos totales 25"] * 100)
 
-# ==================== SEGMENTOS DINÁMICOS ====================
-segmentos_base = {
-    "Foráneas": {"Ingresos 26": 862.57, "Ingresos 25": 2012.66, "Costos 26": 506.05, "Costos 25": 1227.38, "EBITDA 26": 261.47, "EBITDA 25": 586.02},
-    "Metrobús": {"Ingresos 26": 803.16, "Ingresos 25": 1910.86, "Costos 26": 417.82, "Costos 25": 975.24, "EBITDA 26": 334.27, "EBITDA 25": 816.88},
-    "Convencionales": {"Ingresos 26": 489.25, "Ingresos 25": 1120.19, "Costos 26": 320.01, "Costos 25": 756.56, "EBITDA 26": 112.55, "EBITDA 25": 221.35},
-    "Trolebús": {"Ingresos 26": 77.30, "Ingresos 25": 118.24, "Costos 26": 24.21, "Costos 25": 33.61, "EBITDA 26": 48.28, "EBITDA 25": 37.27},
-    "Otras": {"Ingresos 26": 54.26, "Ingresos 25": 0.0, "Costos 26": 0.39, "Costos 25": 0.0, "EBITDA 26": 0.54, "EBITDA 25": 0.0},
-}
+with col1:
+    st.markdown(f"""
+    <div class='metric-box'>
+        <div class='metric-label'>Ingresos 2026</div>
+        <div class='metric-value'>${datos_pbi_reales['Ingresos totales 26']/1_000_000:.1f}M</div>
+        <div class='metric-change'>Total Actual</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-segmentos = {}
-for seg, datos in segmentos_base.items():
-    segmentos[seg] = {k: v * mult_mes * mult_empresa for k, v in datos.items()}
+with col2:
+    st.markdown(f"""
+    <div class='metric-box' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'>
+        <div class='metric-label'>Ingresos 2025</div>
+        <div class='metric-value'>${datos_pbi_reales['Ingresos totales 25']/1_000_000:.1f}M</div>
+        <div class='metric-change'>Año Anterior</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Filtrar segmento si no es "Todos"
-if segmento_seleccionado != "Todos":
-    segmentos = {segmento_seleccionado: segmentos[segmento_seleccionado]}
+with col3:
+    st.markdown(f"""
+    <div class='metric-box' style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);'>
+        <div class='metric-label'>Variación $</div>
+        <div class='metric-value'>${ingresos_var/1_000_000:.1f}M</div>
+        <div class='metric-change'>Cambio Absoluto</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ==================== INDICADOR DE FILTROS ====================
-st.sidebar.info(f"""
-**Filtros Activos:**
-- 📅 Mes: {mes_seleccionado}
-- 🏢 Empresa: {empresa_seleccionada}
-- 🚌 Segmento: {segmento_seleccionado}
+with col4:
+    st.markdown(f"""
+    <div class='metric-box' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'>
+        <div class='metric-label'>Variación %</div>
+        <div class='metric-value'>{ingresos_pct:+.2f}%</div>
+        <div class='metric-change'>Cambio Relativo</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-**Multiplicador de Datos:** {multiplicador_total:.2f}x
-*Los datos se ajustan según los filtros*
-""")
+st.divider()
 
-# ==================== TABS ====================
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Ingresos", "💰 Costos", "📈 EBITDA", "🎯 Segmentos", "📋 Resumen"])
+# ==================== GRÁFICAS ====================
+col1, col2 = st.columns(2)
 
-# ==================== TAB 1: INGRESOS ====================
-with tab1:
-    st.header(f"Análisis de Ingresos - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f"<div class='metric-box'><div class='metric-label'>Ingresos 2026</div><div class='metric-value'>${ingresos_data['2026']:.1f}M</div><div class='metric-change'>{mes_seleccionado}</div></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'><div class='metric-label'>Ingresos 2025</div><div class='metric-value'>${ingresos_data['2025']:.1f}M</div><div class='metric-change'>Año Anterior</div></div>", unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);'><div class='metric-label'>Variación $</div><div class='metric-value'>${ingresos_data['variacion']:.1f}M</div><div class='metric-change'>Cambio Absoluto</div></div>", unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'><div class='metric-label'>Variación %</div><div class='metric-value'>{ingresos_data['variacion_pct']:.2f}%</div><div class='metric-change'>Cambio Relativo</div></div>", unsafe_allow_html=True)
-    
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        fig = go.Figure(data=[go.Bar(x=["2026"], y=[ingresos_data['2026']], name="2026", marker_color="#667eea"), go.Bar(x=["2025"], y=[ingresos_data['2025']], name="2025", marker_color="#4facfe")])
-        fig.update_layout(height=400, title=f"Ingresos Totales - {mes_seleccionado}")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        seg_names = list(segmentos.keys())
-        seg_2026 = [segmentos[s]["Ingresos 26"] for s in seg_names]
-        fig = go.Figure(data=[go.Bar(x=seg_names, y=seg_2026, marker_color="#667eea")])
-        fig.update_layout(height=400, title="Ingresos 2026 por Segmento")
-        st.plotly_chart(fig, use_container_width=True)
+with col1:
+    fig = go.Figure(data=[
+        go.Bar(x=["Ingresos"], y=[datos_pbi_reales["Ingresos totales 26"]/1_000_000], name="2026", marker_color="#667eea"),
+        go.Bar(x=["Ingresos"], y=[datos_pbi_reales["Ingresos totales 25"]/1_000_000], name="2025", marker_color="#4facfe")
+    ])
+    fig.update_layout(height=400, title="Ingresos Totales (Millones)")
+    st.plotly_chart(fig, use_container_width=True)
 
-# ==================== TAB 2: COSTOS ====================
-with tab2:
-    st.header(f"Análisis de Costos - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
+with col2:
+    segmentos_data = {
+        "Convencionales": {"26": datos_pbi_reales["Convencionales 26"], "25": datos_pbi_reales["Convencionales 25"]},
+        "Metrobús": {"26": datos_pbi_reales["Metrobús 26"], "25": datos_pbi_reales["Metrobús 25"]},
+        "Trolebús": {"26": datos_pbi_reales["Trolebús 26"], "25": datos_pbi_reales["Trolebús 25"]},
+        "Foráneas": {"26": datos_pbi_reales["Foráneas 26"], "25": datos_pbi_reales["Foráneas 25"]},
+    }
     
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f"<div class='metric-box'><div class='metric-label'>Costos 2026</div><div class='metric-value'>${costos_data['2026']:.1f}M</div><div class='metric-change'>{mes_seleccionado}</div></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'><div class='metric-label'>Costos 2025</div><div class='metric-value'>${costos_data['2025']:.1f}M</div><div class='metric-change'>Año Anterior</div></div>", unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);'><div class='metric-label'>Ahorro $</div><div class='metric-value'>${abs(costos_data['variacion']):.1f}M</div><div class='metric-change'>Reducción</div></div>", unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'><div class='metric-label'>Eficiencia %</div><div class='metric-value'>{abs(costos_data['variacion_pct']):.2f}%</div><div class='metric-change'>Mejora Relativa</div></div>", unsafe_allow_html=True)
+    seg_names = list(segmentos_data.keys())
+    seg_2026 = [segmentos_data[s]["26"]/1_000_000 for s in seg_names]
     
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        fig = go.Figure(data=[go.Bar(x=["2026"], y=[costos_data['2026']], name="2026", marker_color="#ef4444"), go.Bar(x=["2025"], y=[costos_data['2025']], name="2025", marker_color="#fca5a5")])
-        fig.update_layout(height=400, title=f"Costos Totales - {mes_seleccionado}")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        seg_names = list(segmentos.keys())
-        seg_2026 = [segmentos[s]["Costos 26"] for s in seg_names]
-        fig = go.Figure(data=[go.Bar(x=seg_names, y=seg_2026, marker_color="#ef4444")])
-        fig.update_layout(height=400, title="Costos 2026 por Segmento")
-        st.plotly_chart(fig, use_container_width=True)
+    fig = go.Figure(data=[go.Bar(x=seg_names, y=seg_2026, marker_color="#667eea")])
+    fig.update_layout(height=400, title="Ingresos 2026 por Segmento (Millones)")
+    st.plotly_chart(fig, use_container_width=True)
 
-# ==================== TAB 3: EBITDA ====================
-with tab3:
-    st.header(f"Análisis EBITDA - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f"<div class='metric-box'><div class='metric-label'>EBITDA 2026</div><div class='metric-value'>${ebitda_data['2026']:.1f}M</div><div class='metric-change'>{mes_seleccionado}</div></div>", unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);'><div class='metric-label'>EBITDA 2025</div><div class='metric-value'>${ebitda_data['2025']:.1f}M</div><div class='metric-change'>Año Anterior</div></div>", unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);'><div class='metric-label'>Variación $</div><div class='metric-value'>${ebitda_data['variacion']:.1f}M</div><div class='metric-change'>Cambio</div></div>", unsafe_allow_html=True)
-    with col4:
-        ebitda_margin_26 = (ebitda_data['2026'] / ingresos_data['2026'] * 100) if ingresos_data['2026'] != 0 else 0
-        ebitda_margin_25 = (ebitda_data['2025'] / ingresos_data['2025'] * 100) if ingresos_data['2025'] != 0 else 0
-        st.markdown(f"<div class='metric-box' style='background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);'><div class='metric-label'>Margen EBITDA 2026</div><div class='metric-value'>{ebitda_margin_26:.1f}%</div><div class='metric-change'>vs {ebitda_margin_25:.1f}% (2025)</div></div>", unsafe_allow_html=True)
-    
-    st.divider()
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        fig = go.Figure(data=[go.Bar(x=["2026"], y=[ebitda_data['2026']], name="2026", marker_color="#10b981"), go.Bar(x=["2025"], y=[ebitda_data['2025']], name="2025", marker_color="#6ee7b7")])
-        fig.update_layout(height=400, title=f"EBITDA Total - {mes_seleccionado}")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        seg_names = list(segmentos.keys())
-        seg_2026 = [segmentos[s]["EBITDA 26"] for s in seg_names]
-        fig = go.Figure(data=[go.Bar(x=seg_names, y=seg_2026, marker_color="#10b981")])
-        fig.update_layout(height=400, title="EBITDA 2026 por Segmento")
-        st.plotly_chart(fig, use_container_width=True)
+st.divider()
 
-# ==================== TAB 4: SEGMENTOS ====================
-with tab4:
-    st.header(f"Análisis Comparativo por Segmento - {mes_seleccionado}")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        seg_names = list(segmentos.keys())
-        ingresos_26 = [segmentos[s]["Ingresos 26"] for s in seg_names]
-        ingresos_25 = [segmentos[s]["Ingresos 25"] for s in seg_names]
-        fig = go.Figure(data=[go.Bar(x=seg_names, y=ingresos_26, name="2026", marker_color="#667eea"), go.Bar(x=seg_names, y=ingresos_25, name="2025", marker_color="#4facfe")])
-        fig.update_layout(height=450, title="Ingresos por Segmento", barmode="group")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        costos_26 = [segmentos[s]["Costos 26"] for s in seg_names]
-        costos_25 = [segmentos[s]["Costos 25"] for s in seg_names]
-        fig = go.Figure(data=[go.Bar(x=seg_names, y=costos_26, name="2026", marker_color="#ef4444"), go.Bar(x=seg_names, y=costos_25, name="2025", marker_color="#fca5a5")])
-        fig.update_layout(height=450, title="Costos por Segmento", barmode="group")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    st.divider()
-    
-    tabla_data = []
-    for seg in seg_names:
-        tabla_data.append({
-            "Segmento": seg,
-            "Ingresos 26": f"${segmentos[seg]['Ingresos 26']:.1f}M",
-            "Costos 26": f"${segmentos[seg]['Costos 26']:.1f}M",
-            "EBITDA 26": f"${segmentos[seg]['EBITDA 26']:.1f}M",
-            "Margen %": f"{(segmentos[seg]['EBITDA 26']/segmentos[seg]['Ingresos 26']*100) if segmentos[seg]['Ingresos 26'] > 0 else 0:.1f}%"
-        })
-    
-    df = pd.DataFrame(tabla_data)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+# ==================== TABLA RESUMEN ====================
+st.header("📋 Tabla de Datos - Por Concepto")
 
-# ==================== TAB 5: RESUMEN ====================
-with tab5:
-    st.header("📋 Resumen Ejecutivo")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(f"Indicadores Clave 2026 - {mes_seleccionado}")
-        st.metric("Ingresos Totales", f"${ingresos_data['2026']:.1f}M", f"{ingresos_data['variacion_pct']:.2f}%")
-        st.metric("Costos Totales", f"${costos_data['2026']:.1f}M", f"{costos_data['variacion_pct']:.2f}%")
-        st.metric("EBITDA", f"${ebitda_data['2026']:.1f}M", f"{ebitda_data['variacion_pct']:.2f}%")
-    
-    with col2:
-        st.subheader("Eficiencias Operacionales")
-        margin_26 = (costos_data['2026'] / ingresos_data['2026'] * 100) if ingresos_data['2026'] != 0 else 0
-        margin_25 = (costos_data['2025'] / ingresos_data['2025'] * 100) if ingresos_data['2025'] != 0 else 0
-        st.metric("Ratio Costo/Ingreso 2026", f"{margin_26:.1f}%", f"{margin_25-margin_26:.1f}pp")
-        
-        ebitda_margin_26 = (ebitda_data['2026'] / ingresos_data['2026'] * 100) if ingresos_data['2026'] != 0 else 0
-        ebitda_margin_25 = (ebitda_data['2025'] / ingresos_data['2025'] * 100) if ingresos_data['2025'] != 0 else 0
-        st.metric("Margen EBITDA 2026", f"{ebitda_margin_26:.1f}%", f"{ebitda_margin_26-ebitda_margin_25:.1f}pp")
-    
-    st.divider()
-    
-    st.subheader("Resumen por Segmento")
-    resumen_data = []
-    for seg in list(segmentos.keys()):
-        resumen_data.append({
-            "Segmento": seg,
-            "Ingresos 26": f"${segmentos[seg]['Ingresos 26']:.1f}M",
-            "Ingresos 25": f"${segmentos[seg]['Ingresos 25']:.1f}M",
-            "Var %": f"{((segmentos[seg]['Ingresos 26']-segmentos[seg]['Ingresos 25'])/segmentos[seg]['Ingresos 25']*100) if segmentos[seg]['Ingresos 25'] > 0 else 0:.1f}%",
-            "EBITDA 26": f"${segmentos[seg]['EBITDA 26']:.1f}M",
-            "Margen %": f"{(segmentos[seg]['EBITDA 26']/segmentos[seg]['Ingresos 26']*100) if segmentos[seg]['Ingresos 26'] > 0 else 0:.1f}%"
-        })
-    
-    df_resumen = pd.DataFrame(resumen_data)
-    st.dataframe(df_resumen, use_container_width=True, hide_index=True)
+tabla_data = [
+    {"Concepto": "Ingresos totales", "2026": f"${datos_pbi_reales['Ingresos totales 26']:,}", "2025": f"${datos_pbi_reales['Ingresos totales 25']:,}", "Variación": f"+${ingresos_var:,}", "% Var": f"{ingresos_pct:+.1f}%"},
+    {"Concepto": "Convencionales", "2026": f"${datos_pbi_reales['Convencionales 26']:,}", "2025": f"${datos_pbi_reales['Convencionales 25']:,}", "Variación": f"+${datos_pbi_reales['Convencionales 26']-datos_pbi_reales['Convencionales 25']:,}", "% Var": f"{((datos_pbi_reales['Convencionales 26']-datos_pbi_reales['Convencionales 25'])/datos_pbi_reales['Convencionales 25']*100):+.1f}%"},
+    {"Concepto": "Metrobús", "2026": f"${datos_pbi_reales['Metrobús 26']:,}", "2025": f"${datos_pbi_reales['Metrobús 25']:,}", "Variación": f"+${datos_pbi_reales['Metrobús 26']-datos_pbi_reales['Metrobús 25']:,}", "% Var": f"{((datos_pbi_reales['Metrobús 26']-datos_pbi_reales['Metrobús 25'])/datos_pbi_reales['Metrobús 25']*100):+.1f}%"},
+    {"Concepto": "Trolebús", "2026": f"${datos_pbi_reales['Trolebús 26']:,}", "2025": f"${datos_pbi_reales['Trolebús 25']:,}", "Variación": f"+${datos_pbi_reales['Trolebús 26']-datos_pbi_reales['Trolebús 25']:,}", "% Var": f"{((datos_pbi_reales['Trolebús 26']-datos_pbi_reales['Trolebús 25'])/datos_pbi_reales['Trolebús 25']*100):+.1f}%"},
+    {"Concepto": "Foráneas", "2026": f"${datos_pbi_reales['Foráneas 26']:,}", "2025": f"${datos_pbi_reales['Foráneas 25']:,}", "Variación": f"+${datos_pbi_reales['Foráneas 26']-datos_pbi_reales['Foráneas 25']:,}", "% Var": f"{((datos_pbi_reales['Foráneas 26']-datos_pbi_reales['Foráneas 25'])/datos_pbi_reales['Foráneas 25']*100):+.1f}%"},
+    {"Concepto": "Costos de operación", "2026": f"${datos_pbi_reales['Costos 26']:,}", "2025": f"${datos_pbi_reales['Costos 25']:,}", "Variación": f"+${datos_pbi_reales['Costos 26']-datos_pbi_reales['Costos 25']:,}", "% Var": f"{((datos_pbi_reales['Costos 26']-datos_pbi_reales['Costos 25'])/datos_pbi_reales['Costos 25']*100):+.1f}%"},
+    {"Concepto": "EBITDA", "2026": f"${datos_pbi_reales['EBITDA 26']:,}", "2025": f"${datos_pbi_reales['EBITDA 25']:,}", "Variación": f"+${datos_pbi_reales['EBITDA 26']-datos_pbi_reales['EBITDA 25']:,}", "% Var": f"{((datos_pbi_reales['EBITDA 26']-datos_pbi_reales['EBITDA 25'])/datos_pbi_reales['EBITDA 25']*100):+.1f}%"},
+]
+
+df = pd.DataFrame(tabla_data)
+st.dataframe(df, use_container_width=True, hide_index=True)
 
 # ==================== FOOTER ====================
 st.markdown("---")
@@ -272,6 +156,6 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
     st.caption(f"Última actualización: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 with col2:
-    st.caption("Dashboard v7.0 - Filtros Dinámicos en Vivo")
+    st.caption("Dashboard v9.0 - Datos REALES")
 with col3:
     st.caption("💰 Grupo CISA")
