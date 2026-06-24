@@ -1,426 +1,376 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
 from datetime import datetime
 
-# Configuración de la página
 st.set_page_config(
     page_title="Dashboard Ingresos - Grupo CISA",
     page_icon="💰",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# CSS personalizado
 st.markdown("""
     <style>
     .metric-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 20px;
-        border-radius: 10px;
+        padding: 25px;
+        border-radius: 12px;
         text-align: center;
     }
-    .metric-label {
-        font-size: 12px;
-        opacity: 0.9;
-        margin-bottom: 8px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .metric-value {
-        font-size: 28px;
-        font-weight: bold;
-        margin-bottom: 8px;
-    }
-    .metric-change {
-        font-size: 12px;
-        opacity: 0.8;
-    }
-    .segment-card {
-        background: #f9fafb;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #667eea;
-        margin-bottom: 10px;
-    }
-    .segment-name {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
-    .segment-value {
-        display: flex;
-        justify-content: space-between;
-        font-size: 14px;
-        margin-bottom: 5px;
-    }
-    .segment-pct {
-        color: #667eea;
-        font-weight: bold;
-    }
+    .metric-label { font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; }
+    .metric-value { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
+    .metric-change { font-size: 12px; opacity: 0.8; }
     </style>
 """, unsafe_allow_html=True)
 
-# Header
 st.title("💰 Dashboard de Ingresos Operacionales")
-st.markdown("**Grupo CISA - Análisis de Drivers de Ingresos 2026 vs 2025**")
+st.markdown("**Grupo CISA - Análisis Detallado 2026 vs 2025**")
 
-# Sidebar
+# ==================== SIDEBAR: FILTROS ====================
 st.sidebar.header("⚙️ Filtros")
+
 mes_seleccionado = st.sidebar.selectbox(
-    "Mes:",
-    ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio"],
+    "📅 Selecciona Mes:",
+    ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
     index=4
 )
 
 empresa_seleccionada = st.sidebar.selectbox(
-    "Empresa:",
-    ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA"]
+    "🏢 Selecciona Empresa:",
+    ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA", "COREVSA"]
+)
+
+segmento_seleccionado = st.sidebar.selectbox(
+    "🚌 Selecciona Segmento:",
+    ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús"]
 )
 
 st.sidebar.markdown("---")
+st.sidebar.info(f"""
+**Filtros Activos:**
+- 📅 Mes: {mes_seleccionado}
+- 🏢 Empresa: {empresa_seleccionada}
+- 🚌 Segmento: {segmento_seleccionado}
+""")
 
-# Datos de ingresos y drivers
-ingresos_data = {
-    "2026": 456.465,
-    "2025": 423.277,
-    "variacion": 33.188,
-    "variacion_pct": 7.84
+# ==================== SECCIÓN 1: MÉTRICAS PRINCIPALES ====================
+st.header("📊 1. Resumen Total de Ingresos")
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown("""
+    <div class="metric-box">
+        <div class="metric-label">Ingresos 2026</div>
+        <div class="metric-value">$456.5M</div>
+        <div class="metric-change">Actual</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div class="metric-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+        <div class="metric-label">Ingresos 2025</div>
+        <div class="metric-value">$423.3M</div>
+        <div class="metric-change">Año Anterior</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div class="metric-box" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
+        <div class="metric-label">Variación $</div>
+        <div class="metric-value">+$33.2M</div>
+        <div class="metric-change">Crecimiento</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+    <div class="metric-box" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+        <div class="metric-label">Variación %</div>
+        <div class="metric-value">+7.84%</div>
+        <div class="metric-change">YoY Growth</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.divider()
+
+# ==================== SECCIÓN 1b: GRÁFICA COMPARATIVA TOTAL ====================
+st.subheader("📊 Comparativa Total: Ingresos 2026 vs 2025")
+
+fig_total = go.Figure(data=[
+    go.Bar(x=["Ingresos"], y=[456.5], name="2026", marker_color="#667eea", text=["$456.5M"], textposition="outside"),
+    go.Bar(x=["Ingresos"], y=[423.3], name="2025", marker_color="#4facfe", text=["$423.3M"], textposition="outside")
+])
+fig_total.update_layout(barmode="group", height=350, title="Total de Ingresos Operacionales")
+st.plotly_chart(fig_total, use_container_width=True)
+
+st.divider()
+
+# ==================== SECCIÓN 2: APORTACIÓN POR SEGMENTO ====================
+st.header("📈 2. Aportación por Segmento de Empresa")
+
+segmentos = {
+    "Foráneas": {"2026": 178.177, "2025": 172.016, "var": 6.161, "pct": 39.0},
+    "Metrobús": {"2026": 163.343, "2025": 156.027, "var": 7.316, "pct": 35.8},
+    "Convencionales": {"2026": 98.805, "2025": 91.478, "var": 7.327, "pct": 21.6},
+    "Trolebús": {"2026": 16.140, "2025": 3.755, "var": 12.385, "pct": 3.5},
 }
 
-drivers_ingresos = {
-    "Km recorrido": {"valor": 9.876, "pct": 2.97},
-    "Pago x KM": {"valor": 3.764, "pct": 1.13},
-    "Otros": {"valor": 19.548, "pct": 5.87},
-}
+# Gráfico de barras por segmento PRIMERO (visual)
+seg_names = list(segmentos.keys())
+seg_2026 = [segmentos[s]["2026"] for s in seg_names]
+seg_2025 = [segmentos[s]["2025"] for s in seg_names]
 
-segmentos_data = {
-    "Convencionales": {"monto_26": 98.805, "monto_25": 91.478, "variacion": 7.327, "pct_ingreso": 21.6},
-    "Metrobús": {"monto_26": 163.343, "monto_25": 156.027, "variacion": 7.316, "pct_ingreso": 35.8},
-    "Trolebús": {"monto_26": 16.140, "monto_25": 3.755, "variacion": 12.385, "pct_ingreso": 3.5},
-    "Foráneas": {"monto_26": 178.177, "monto_25": 172.016, "variacion": 6.161, "pct_ingreso": 39.0},
-}
+fig_seg = go.Figure(data=[
+    go.Bar(x=seg_names, y=seg_2026, name="2026", marker_color="#667eea"),
+    go.Bar(x=seg_names, y=seg_2025, name="2025", marker_color="#4facfe")
+])
+fig_seg.update_layout(barmode="group", height=400, title="Comparativa de Ingresos por Segmento")
+st.plotly_chart(fig_seg, use_container_width=True)
 
-# TABS
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Métricas Principales", "🎯 Drivers de Ingresos", "📈 Análisis por Segmento", "📉 Waterfall Ingresos"])
+st.divider()
 
-# TAB 1: MÉTRICAS PRINCIPALES
-with tab1:
-    st.subheader("Resumen Ejecutivo - Ingresos 2026 vs 2025")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="metric-box">
-            <div class="metric-label">Ingresos 2026</div>
-            <div class="metric-value">$456.5M</div>
-            <div class="metric-change">Actual</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="metric-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <div class="metric-label">Ingresos 2025</div>
-            <div class="metric-value">$423.3M</div>
-            <div class="metric-change">Año Anterior</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="metric-box" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
-            <div class="metric-label">Variación Absoluta</div>
-            <div class="metric-value">+$33.2M</div>
-            <div class="metric-change">Crecimiento</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-        <div class="metric-box" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
-            <div class="metric-label">Variación %</div>
-            <div class="metric-value">+7.84%</div>
-            <div class="metric-change">Crecimiento YoY</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Tabla comparativa
-    st.subheader("Ingresos Detallados por Concepto")
-    
-    conceptos_data = {
-        "Concepto": [
-            "Ingresos Totales",
-            "├─ Convencionales",
-            "├─ Metrobús",
-            "├─ Trolebús",
-            "└─ Foráneas",
-            "",
-            "Drivers Operacionales",
-            "├─ KM Conciliado",
-            "├─ KM Recorrido",
-            "├─ Cumplimiento",
-            "├─ Pago x KM",
-            "└─ Pago por Pasajero"
-        ],
-        "2026": [
-            "456.465", "98.805", "163.343", "16.140", "178.177",
-            "",
-            "",
-            "6,668.5", "6,715.9", "95.88%", "64.61", "17.49"
-        ],
-        "2025": [
-            "423.277", "91.478", "156.027", "3.755", "172.016",
-            "",
-            "",
-            "6,455.8", "6,555.8", "94.37%", "61.70", "14.03"
-        ],
-        "Variación": [
-            "+33.188", "+7.327", "+7.316", "+12.385", "+6.161",
-            "",
-            "",
-            "+212.7", "+160.1", "+1.51pp", "+2.91", "+3.45"
-        ],
-        "% Cambio": [
-            "+7.84%", "+8.0%", "+4.7%", "+329.9%", "+3.6%",
-            "",
-            "",
-            "+3.3%", "+2.4%", "+1.6%", "+4.72%", "+24.62%"
-        ]
+# ==================== SECCIÓN 3: DRIVERS DE INGRESOS ====================
+st.header("🎯 3. Drivers que Impulsan los Ingresos")
+
+drivers = {
+    "Cumplimiento": {
+        "valor_26": "95.88%",
+        "valor_25": "94.37%",
+        "variacion": "+1.51pp",
+        "aportacion": "0.52%",
+        "impacto": "Mejora en cumplimiento genera más ingresos"
+    },
+    "KM Recorrido": {
+        "valor_26": "6,715.9k",
+        "valor_25": "6,555.8k",
+        "variacion": "+160.1k",
+        "aportacion": "2.40%",
+        "impacto": "Aumento de KM recorridos impulsa ingresos directamente"
+    },
+    "Pago por KM": {
+        "valor_26": "64.61",
+        "valor_25": "61.70",
+        "variacion": "+2.91",
+        "aportacion": "4.72%",
+        "impacto": "Incremento de tarifa por KM aumenta ingresos totales"
+    },
+    "Pago por Pasajero": {
+        "valor_26": "17.49",
+        "valor_25": "14.03",
+        "variacion": "+3.45",
+        "aportacion": "24.62%",
+        "impacto": "Mayor tarifa por pasajero genera mayor impacto relativo"
+    },
+    "Demanda": {
+        "valor_26": "456.5M",
+        "valor_25": "423.3M",
+        "variacion": "+33.2M",
+        "aportacion": "100.00%",
+        "impacto": "Demanda total de servicios de transporte"
     }
-    
-    df_conceptos = pd.DataFrame(conceptos_data)
-    st.dataframe(df_conceptos, use_container_width=True, hide_index=True)
+}
 
-# TAB 2: DRIVERS DE INGRESOS
-with tab2:
-    st.subheader("🎯 ¿Qué impulsa el crecimiento de ingresos?")
-    
-    # Waterfall de drivers (Waterfall Visual como en Power BI)
-    fig_waterfall = go.Figure(go.Waterfall(
-        name="WF Valor Ingresos",
-        orientation="v",
-        x=["Ingresos 2025", "Km recorrido", "Pago x KM", "Otros", "Ingresos 2026"],
-        textposition="outside",
-        y=[423.277, 9.876, 3.764, 19.548, 0],
-        base=0,
-        connector={"line": {"color": "rgba(63, 63, 63, 0.35)"}},
-        increasing={"marker": {"color": "#10b981"}},
-        decreasing={"marker": {"color": "#ef4444"}},
-        totals={"marker": {"color": "#667eea"}},
-        measures=["relative", "relative", "relative", "relative", "total"],
-        text=[
-            "423.277 mil",
-            "9.876 mil",
-            "3.764 mil",
-            "19.548 mil",
-            "456.465 mil"
-        ]
-    ))
-    
-    fig_waterfall.update_layout(
-        height=500,
-        title="WF Valor Ingresos por Driver (2025 → 2026)",
-        yaxis_title="Ingresos (Millones)",
-        showlegend=True
-    )
-    
-    st.plotly_chart(fig_waterfall, use_container_width=True)
-    
-    st.markdown("---")
-    
-    # Desglose de drivers
-    st.subheader("Contribución Detallada de Drivers")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown(f"""
-        <div class="segment-card">
-            <div class="segment-name">📍 KM Recorrido</div>
-            <div class="segment-value">
-                <span>Aumento:</span>
-                <span class="segment-pct">+9.876M</span>
-            </div>
-            <div class="segment-value">
-                <span>% del Total:</span>
-                <span class="segment-pct">2.97%</span>
-            </div>
-            <div style="font-size: 11px; color: #666; margin-top: 8px;">
-                Aumento de KM recorridos contribuye al crecimiento de ingresos
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div class="segment-card">
-            <div class="segment-name">📍 Pago x KM</div>
-            <div class="segment-value">
-                <span>Aumento:</span>
-                <span class="segment-pct">+3.764M</span>
-            </div>
-            <div class="segment-value">
-                <span>% del Total:</span>
-                <span class="segment-pct">1.13%</span>
-            </div>
-            <div style="font-size: 11px; color: #666; margin-top: 8px;">
-                Incremento en tarifa por KM afecta ingresos
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div class="segment-card">
-            <div class="segment-name">📍 Otros Drivers</div>
-            <div class="segment-value">
-                <span>Aumento:</span>
-                <span class="segment-pct">+19.548M</span>
-            </div>
-            <div class="segment-value">
-                <span>% del Total:</span>
-                <span class="segment-pct">5.87%</span>
-            </div>
-            <div style="font-size: 11px; color: #666; margin-top: 8px;">
-                Otros factores (demanda, cumplimiento, etc)
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+# Cards detallados de cada driver
+st.subheader("Análisis Detallado por Driver")
 
-# TAB 3: ANÁLISIS POR SEGMENTO
-with tab3:
-    st.subheader("Ingresos por Segmento de Empresa")
-    
-    # Gráfico de barras
-    segmentos = list(segmentos_data.keys())
-    montos_26 = [segmentos_data[s]["monto_26"] for s in segmentos]
-    montos_25 = [segmentos_data[s]["monto_25"] for s in segmentos]
-    
-    fig_segments = go.Figure(data=[
-        go.Bar(x=segmentos, y=montos_26, name="2026", marker_color="#667eea"),
-        go.Bar(x=segmentos, y=montos_25, name="2025", marker_color="#4facfe")
-    ])
-    
-    fig_segments.update_layout(
-        barmode="group",
-        height=400,
-        hovermode="x unified",
-        title="Comparativa de Ingresos por Segmento",
-        xaxis_title="Segmento",
-        yaxis_title="Ingresos (Millones)"
-    )
-    
-    st.plotly_chart(fig_segments, use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.subheader("Desglose por Segmento y Aportación al Total")
-    
-    for segmento, data in segmentos_data.items():
-        st.markdown(f"""
-        <div class="segment-card">
-            <div class="segment-name">🎯 {segmento}</div>
-            <div class="segment-value">
-                <span>Ingresos 2026:</span>
-                <span class="segment-pct">${data['monto_26']:.1f}M</span>
-            </div>
-            <div class="segment-value">
-                <span>Ingresos 2025:</span>
-                <span>${data['monto_25']:.1f}M</span>
-            </div>
-            <div class="segment-value">
-                <span>Variación:</span>
-                <span class="segment-pct">+${data['variacion']:.2f}M ({((data['variacion']/data['monto_25'])*100):.1f}%)</span>
-            </div>
-            <div class="segment-value">
-                <span>% del Total:</span>
-                <span class="segment-pct">{data['pct_ingreso']:.1f}%</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+col1, col2 = st.columns(2)
 
-# TAB 4: WATERFALL EVOLUCIÓN
-with tab4:
-    st.subheader("Evolución de Ingresos: Del 2025 al 2026")
+with col1:
+    st.markdown(f"""
+    **📍 Cumplimiento**
+    - 2026: {drivers['Cumplimiento']['valor_26']}
+    - 2025: {drivers['Cumplimiento']['valor_25']}
+    - Variación: {drivers['Cumplimiento']['variacion']}
+    - Aportación: {drivers['Cumplimiento']['aportacion']}
+    - 💡 {drivers['Cumplimiento']['impacto']}
+    """)
     
-    # Waterfall por segmento
-    fig_wf_segmentos = go.Figure(go.Waterfall(
-        name="Variación por Segmento",
-        orientation="v",
-        x=[
-            "Ingresos 2025",
-            "Convencionales +8.0%",
-            "Metrobús +4.7%",
-            "Trolebús +329.9%",
-            "Foráneas +3.6%",
-            "Ingresos 2026"
-        ],
-        textposition="outside",
-        y=[
-            423.277,
-            7.327,
-            7.316,
-            12.385,
-            6.161,
-            0
-        ],
-        base=0,
-        connector={"line": {"color": "rgba(63, 63, 63, 0.35)"}},
-        increasing={"marker": {"color": "#10b981"}},
-        decreasing={"marker": {"color": "#ef4444"}},
-        totals={"marker": {"color": "#667eea"}},
-        measures=["relative", "relative", "relative", "relative", "relative", "total"],
-        text=[
-            "423.3M",
-            "+7.3M",
-            "+7.3M",
-            "+12.4M",
-            "+6.2M",
-            "456.5M"
-        ]
-    ))
+    st.markdown(f"""
+    **📍 KM Recorrido**
+    - 2026: {drivers['KM Recorrido']['valor_26']}
+    - 2025: {drivers['KM Recorrido']['valor_25']}
+    - Variación: {drivers['KM Recorrido']['variacion']}
+    - Aportación: {drivers['KM Recorrido']['aportacion']}
+    - 💡 {drivers['KM Recorrido']['impacto']}
+    """)
     
-    fig_wf_segmentos.update_layout(
-        height=600,
-        title="Evolución de Ingresos por Segmento (2025 → 2026)",
-        yaxis_title="Ingresos (Millones)",
-        showlegend=True
-    )
+    st.markdown(f"""
+    **📍 Pago por KM**
+    - 2026: {drivers['Pago por KM']['valor_26']}
+    - 2025: {drivers['Pago por KM']['valor_25']}
+    - Variación: {drivers['Pago por KM']['variacion']}
+    - Aportación: {drivers['Pago por KM']['aportacion']}
+    - 💡 {drivers['Pago por KM']['impacto']}
+    """)
+
+with col2:
+    st.markdown(f"""
+    **📍 Pago por Pasajero**
+    - 2026: {drivers['Pago por Pasajero']['valor_26']}
+    - 2025: {drivers['Pago por Pasajero']['valor_25']}
+    - Variación: {drivers['Pago por Pasajero']['variacion']}
+    - Aportación: {drivers['Pago por Pasajero']['aportacion']}
+    - 💡 {drivers['Pago por Pasajero']['impacto']}
+    """)
     
-    st.plotly_chart(fig_wf_segmentos, use_container_width=True)
+    st.markdown(f"""
+    **📍 Demanda Total**
+    - 2026: {drivers['Demanda']['valor_26']}
+    - 2025: {drivers['Demanda']['valor_25']}
+    - Variación: {drivers['Demanda']['variacion']}
+    - Aportación: {drivers['Demanda']['aportacion']}
+    - 💡 {drivers['Demanda']['impacto']}
+    """)
+
+st.divider()
+
+# ==================== SECCIÓN 4: GRÁFICA WATERFALL ====================
+st.header("📊 4. Evolución de Ingresos: Waterfall 2025 → 2026")
+
+st.markdown("**¿Cómo pasamos de $423.3M a $456.5M? Aquí está el desglose:**")
+
+# Waterfall por segmento - CORREGIDO
+fig_waterfall = go.Figure(go.Waterfall(
+    name="Ingresos",
+    orientation="v",
+    x=[
+        "Ingresos 2025",
+        "Convencionales",
+        "Metrobús",
+        "Trolebús",
+        "Foráneas",
+        "Ingresos 2026"
+    ],
+    y=[423.277, 7.327, 7.316, 12.385, 6.161, 0],
+    textposition="outside",
+    text=["$423.3M", "+$7.3M\n(+8.0%)", "+$7.3M\n(+4.7%)", "+$12.4M\n(+329.9%)", "+$6.2M\n(+3.6%)", "$456.5M"],
+    connector={"line": {"color": "rgba(63, 63, 63, 0.35)"}},
+    increasing={"marker": {"color": "#10b981"}},
+    decreasing={"marker": {"color": "#ef4444"}},
+    totals={"marker": {"color": "#667eea"}},
+    measure=["relative", "relative", "relative", "relative", "relative", "total"]
+))
+
+fig_waterfall.update_layout(
+    height=500,
+    title="WF Valor Ingresos - Evolución por Segmento (2025 → 2026)",
+    yaxis_title="Ingresos (Millones)"
+)
+
+st.plotly_chart(fig_waterfall, use_container_width=True)
+
+# Análisis del waterfall
+st.subheader("Análisis de la Evolución")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.info("""
+    **🔍 Principales Impulsores:**
     
-    st.markdown("---")
+    1. **Trolebús**: +$12.4M (+329.9%)
+       - Mayor expansión del servicio
     
-    st.subheader("📊 Análisis de la Evolución")
+    2. **Convencionales**: +$7.3M (+8.0%)
+       - Crecimiento estable en base
     
-    col1, col2 = st.columns(2)
+    3. **Metrobús**: +$7.3M (+4.7%)
+       - Mantenimiento de posición fuerte
     
-    with col1:
-        st.info("""
-        **🔍 Principales Impulsores:**
-        - **Trolebús**: Crecimiento espectacular de +329.9% (de 3.8M a 16.1M)
-        - **Convencionales**: +8.0% (7.3M adicionales)
-        - **Metrobús**: +4.7% (7.3M adicionales)
-        - **Foráneas**: +3.6% (6.2M adicionales)
-        
-        **Total**: +$33.2M (+7.84%)
-        """)
+    4. **Foráneas**: +$6.2M (+3.6%)
+       - Segmento más grande, crece moderado
     
-    with col2:
-        st.warning("""
-        **⚠️ Observaciones:**
-        - Trolebús lidera el crecimiento porcentual
-        - Foráneas es el segmento más grande (39% del total)
-        - Metrobús mantiene posición fuerte (35.8%)
-        - Crecimiento distribuido entre todos los segmentos
-        """)
+    **Total: +$33.2M (+7.84%)**
+    """)
+
+with col2:
+    st.warning("""
+    **⚡ Insights Clave:**
+    
+    ✅ **Crecimiento distribuido** entre todos segmentos
+    
+    ✅ **Trolebús lidera** en crecimiento porcentual
+    
+    ✅ **Foráneas permanece grande** (39% del total)
+    
+    ✅ **Metrobús estable** (35.8% del total)
+    
+    ✅ **Drivers positivos**: KM, tarifa, cumplimiento
+    
+    📊 **Pronóstico**: Tendencia alcista sostenible
+    """)
+
+st.divider()
+
+# ==================== SECCIÓN 5: TABLAS DETALLADAS ====================
+st.header("📋 5. Tablas Detalladas")
+
+st.subheader("Tabla: Ingresos por Segmento")
+
+tabla_segmentos = []
+for seg, datos in segmentos.items():
+    tabla_segmentos.append({
+        "Segmento": seg,
+        "2026": f"${datos['2026']:.1f}M",
+        "2025": f"${datos['2025']:.1f}M",
+        "Variación": f"+${datos['var']:.1f}M",
+        "% Variación": f"+{((datos['var']/datos['2025'])*100):.1f}%",
+        "% del Total": f"{datos['pct']:.1f}%"
+    })
+
+df_seg = pd.DataFrame(tabla_segmentos)
+st.dataframe(df_seg, use_container_width=True, hide_index=True)
+
+st.divider()
+
+st.subheader("Tabla: Drivers de Ingresos")
+
+tabla_drivers = []
+for driver, datos in drivers.items():
+    tabla_drivers.append({
+        "Driver": driver,
+        "2026": datos["valor_26"],
+        "2025": datos["valor_25"],
+        "Variación": datos["variacion"],
+        "% Aportación": datos["aportacion"]
+    })
+
+df_drivers = pd.DataFrame(tabla_drivers)
+st.dataframe(df_drivers, use_container_width=True, hide_index=True)
+
+# ==================== SECCIÓN 6: SUMMARY ====================
+st.header("📋 Resumen Ejecutivo")
+
+summary_data = {
+    "Métrica": [
+        "Total Ingresos 2026",
+        "Total Ingresos 2025",
+        "Crecimiento Absoluto",
+        "Crecimiento Porcentual",
+        "Segmento Dominante",
+        "Segmento Mayor Crecimiento %",
+        "Driver Principal",
+        "Eficiencia Operativa"
+    ],
+    "Valor": [
+        "$456.5M",
+        "$423.3M",
+        "+$33.2M",
+        "+7.84%",
+        "Foráneas (39.0%)",
+        "Trolebús (+329.9%)",
+        "Pago por Pasajero (+24.62%)",
+        "95.88% Cumplimiento"
+    ]
+}
+
+df_summary = pd.DataFrame(summary_data)
+st.dataframe(df_summary, use_container_width=True, hide_index=True)
 
 # Footer
 st.markdown("---")
@@ -428,6 +378,6 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
     st.caption(f"Última actualización: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 with col2:
-    st.caption("Dashboard v1.0 - Análisis de Ingresos")
+    st.caption("Dashboard v1.0 - Ingresos Operacionales")
 with col3:
     st.caption("💰 Grupo CISA")
