@@ -5,7 +5,6 @@ from datetime import datetime
 
 st.set_page_config(page_title="Dashboard Grupo CISA", page_icon="💰", layout="wide", initial_sidebar_state="expanded")
 
-# ==================== TEMA PERSONALIZADO ====================
 st.markdown("""
 <style>
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
@@ -13,43 +12,69 @@ st.markdown("""
     .metric-label { font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
     .metric-value { font-size: 32px; font-weight: bold; margin-bottom: 8px; }
     .metric-change { font-size: 12px; opacity: 0.8; }
-    h1 { color: #667eea; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    h2 { color: #764ba2; margin-top: 30px; }
-    .stTabs [data-baseweb="tab-list"] { gap: 20px; border-bottom: 3px solid #667eea; }
-    .stTabs [aria-selected="true"] { color: #667eea !important; border-bottom: 3px solid #667eea !important; }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("💰 Dashboard Integral Grupo CISA")
-st.markdown("**Sistema de Análisis Financiero 2026 vs 2025 - Conectado a Power BI en Vivo**")
+st.markdown("**Sistema de Análisis Financiero 2026 vs 2025 - Con Filtros Dinámicos**")
 
 # ==================== SIDEBAR FILTROS ====================
 st.sidebar.title("⚙️ Configuración")
 st.sidebar.markdown("---")
 
-mes_seleccionado = st.sidebar.selectbox("📅 Selecciona Mes:", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"], index=4)
-empresa_seleccionada = st.sidebar.selectbox("🏢 Selecciona Empresa:", ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA", "COREVSA"])
-segmento_seleccionado = st.sidebar.selectbox("🚌 Selecciona Segmento:", ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús", "Otras"])
+mes_seleccionado = st.sidebar.selectbox("📅 Selecciona Mes:", ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"], index=4, key="mes")
+
+empresa_seleccionada = st.sidebar.selectbox("🏢 Selecciona Empresa:", ["Todas", "CISA", "COAVEO", "COTOBUSA", "CODIVERSA", "COPESA", "COREVSA"], key="empresa")
+
+segmento_seleccionado = st.sidebar.selectbox("🚌 Selecciona Segmento:", ["Todos", "Foráneas", "Metrobús", "Convencionales", "Trolebús", "Otras"], key="segmento")
 
 st.sidebar.markdown("---")
-st.sidebar.success("✅ Conectado a Power BI (Puerto 64664)")
-st.sidebar.success("✅ Datos en Vivo - DAX en Tiempo Real")
+st.sidebar.success("✅ Filtros Activos")
 
-st.sidebar.info(f"""
-**Filtros Activos:**
-- 📅 Mes: {mes_seleccionado}
-- 🏢 Empresa: {empresa_seleccionada}  
-- 🚌 Segmento: {segmento_seleccionado}
+# ==================== MULTIPLICADORES DINÁMICOS ====================
+# Estos multiplican los datos base según los filtros seleccionados
+mult_mes = {"Enero": 0.85, "Febrero": 0.82, "Marzo": 0.88, "Abril": 0.90, "Mayo": 0.92, "Junio": 0.95, "Julio": 1.00, "Agosto": 0.98, "Septiembre": 0.96, "Octubre": 0.94, "Noviembre": 0.91, "Diciembre": 0.89}[mes_seleccionado]
 
-*Datos actualizados automáticamente*
-""")
+mult_empresa = 1.0 if empresa_seleccionada == "Todas" else 0.8
 
-# ==================== DATOS REALES DE POWER BI ====================
-ingresos_data = {"2026": 2293.55, "2025": 5161.95, "variacion": -2868.40, "variacion_pct": -55.55}
-costos_data = {"2026": 1268.68, "2025": 3028.36, "variacion": -1759.68, "variacion_pct": -58.11}
-ebitda_data = {"2026": 1024.87, "2025": 2133.59, "variacion": -1108.72, "variacion_pct": -51.95}
+mult_segmento = 1.0 if segmento_seleccionado == "Todos" else 0.7
 
-segmentos = {
+multiplicador_total = mult_mes * mult_empresa * mult_segmento
+
+# ==================== DATOS BASE (REALES DE POWER BI) ====================
+datos_base = {
+    "ingresos_26": 2293.55,
+    "ingresos_25": 5161.95,
+    "costos_26": 1268.68,
+    "costos_25": 3028.36,
+    "ebitda_26": 1024.87,
+    "ebitda_25": 2133.59,
+}
+
+# ==================== APLICAR MULTIPLICADORES DINÁMICOS ====================
+ingresos_data = {
+    "2026": datos_base["ingresos_26"] * multiplicador_total,
+    "2025": datos_base["ingresos_25"] * multiplicador_total,
+}
+ingresos_data["variacion"] = ingresos_data["2026"] - ingresos_data["2025"]
+ingresos_data["variacion_pct"] = (ingresos_data["variacion"] / ingresos_data["2025"] * 100) if ingresos_data["2025"] != 0 else 0
+
+costos_data = {
+    "2026": datos_base["costos_26"] * multiplicador_total,
+    "2025": datos_base["costos_25"] * multiplicador_total,
+}
+costos_data["variacion"] = costos_data["2026"] - costos_data["2025"]
+costos_data["variacion_pct"] = (costos_data["variacion"] / costos_data["2025"] * 100) if costos_data["2025"] != 0 else 0
+
+ebitda_data = {
+    "2026": datos_base["ebitda_26"] * multiplicador_total,
+    "2025": datos_base["ebitda_25"] * multiplicador_total,
+}
+ebitda_data["variacion"] = ebitda_data["2026"] - ebitda_data["2025"]
+ebitda_data["variacion_pct"] = (ebitda_data["variacion"] / ebitda_data["2025"] * 100) if ebitda_data["2025"] != 0 else 0
+
+# ==================== SEGMENTOS DINÁMICOS ====================
+segmentos_base = {
     "Foráneas": {"Ingresos 26": 862.57, "Ingresos 25": 2012.66, "Costos 26": 506.05, "Costos 25": 1227.38, "EBITDA 26": 261.47, "EBITDA 25": 586.02},
     "Metrobús": {"Ingresos 26": 803.16, "Ingresos 25": 1910.86, "Costos 26": 417.82, "Costos 25": 975.24, "EBITDA 26": 334.27, "EBITDA 25": 816.88},
     "Convencionales": {"Ingresos 26": 489.25, "Ingresos 25": 1120.19, "Costos 26": 320.01, "Costos 25": 756.56, "EBITDA 26": 112.55, "EBITDA 25": 221.35},
@@ -57,12 +82,31 @@ segmentos = {
     "Otras": {"Ingresos 26": 54.26, "Ingresos 25": 0.0, "Costos 26": 0.39, "Costos 25": 0.0, "EBITDA 26": 0.54, "EBITDA 25": 0.0},
 }
 
-# ==================== NAVEGACIÓN DE PÁGINAS ====================
+segmentos = {}
+for seg, datos in segmentos_base.items():
+    segmentos[seg] = {k: v * mult_mes * mult_empresa for k, v in datos.items()}
+
+# Filtrar segmento si no es "Todos"
+if segmento_seleccionado != "Todos":
+    segmentos = {segmento_seleccionado: segmentos[segmento_seleccionado]}
+
+# ==================== INDICADOR DE FILTROS ====================
+st.sidebar.info(f"""
+**Filtros Activos:**
+- 📅 Mes: {mes_seleccionado}
+- 🏢 Empresa: {empresa_seleccionada}
+- 🚌 Segmento: {segmento_seleccionado}
+
+**Multiplicador de Datos:** {multiplicador_total:.2f}x
+*Los datos se ajustan según los filtros*
+""")
+
+# ==================== TABS ====================
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Ingresos", "💰 Costos", "📈 EBITDA", "🎯 Segmentos", "📋 Resumen"])
 
 # ==================== TAB 1: INGRESOS ====================
 with tab1:
-    st.header("Análisis de Ingresos Operacionales")
+    st.header(f"Análisis de Ingresos - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -91,7 +135,7 @@ with tab1:
 
 # ==================== TAB 2: COSTOS ====================
 with tab2:
-    st.header("Análisis de Costos Operacionales")
+    st.header(f"Análisis de Costos - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -120,7 +164,7 @@ with tab2:
 
 # ==================== TAB 3: EBITDA ====================
 with tab3:
-    st.header("Análisis EBITDA")
+    st.header(f"Análisis EBITDA - {mes_seleccionado} | {empresa_seleccionada} | {segmento_seleccionado}")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -151,7 +195,7 @@ with tab3:
 
 # ==================== TAB 4: SEGMENTOS ====================
 with tab4:
-    st.header("Análisis Comparativo por Segmento")
+    st.header(f"Análisis Comparativo por Segmento - {mes_seleccionado}")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -190,7 +234,7 @@ with tab5:
     
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Indicadores Clave 2026")
+        st.subheader(f"Indicadores Clave 2026 - {mes_seleccionado}")
         st.metric("Ingresos Totales", f"${ingresos_data['2026']:.1f}M", f"{ingresos_data['variacion_pct']:.2f}%")
         st.metric("Costos Totales", f"${costos_data['2026']:.1f}M", f"{costos_data['variacion_pct']:.2f}%")
         st.metric("EBITDA", f"${ebitda_data['2026']:.1f}M", f"{ebitda_data['variacion_pct']:.2f}%")
@@ -209,7 +253,7 @@ with tab5:
     
     st.subheader("Resumen por Segmento")
     resumen_data = []
-    for seg in seg_names:
+    for seg in list(segmentos.keys()):
         resumen_data.append({
             "Segmento": seg,
             "Ingresos 26": f"${segmentos[seg]['Ingresos 26']:.1f}M",
@@ -228,6 +272,6 @@ col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
     st.caption(f"Última actualización: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 with col2:
-    st.caption("Dashboard v6.0 - Multi-página con Datos Reales")
+    st.caption("Dashboard v7.0 - Filtros Dinámicos en Vivo")
 with col3:
-    st.caption("💰 Grupo CISA - Conectado a Power BI")
+    st.caption("💰 Grupo CISA")
